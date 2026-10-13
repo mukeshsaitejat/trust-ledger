@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               <div className="flex items-center gap-3">
                 <div className="hidden rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-slate-500 sm:block">
-                  Demo mode enabled
+                  Live backend
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface font-semibold text-text">
                   IS

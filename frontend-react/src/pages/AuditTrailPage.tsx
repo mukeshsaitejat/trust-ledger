@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchAuditTrail } from '../lib/demoApi';
+import { fetchAuditTrail } from '../lib/api';
 import type { AuditTrailEntry } from '../types';
 
 const formatTimestamp = (value: string) => new Date(value).toLocaleString();

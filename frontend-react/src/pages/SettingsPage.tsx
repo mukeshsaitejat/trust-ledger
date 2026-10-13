@@ -1,15 +1,23 @@
 import { CheckCircle2, Cpu, Database, Globe, Info } from 'lucide-react';
-import { API_BASE_URL, getDemoModeStatus } from '../lib/demoApi';
+import { useEffect, useState } from 'react';
+import { API_BASE_URL, checkHealth } from '../lib/api';
 
 export default function SettingsPage() {
-  const demoMode = getDemoModeStatus();
+  const [health, setHealth] = useState<{ status: string; app_name: string; version: string } | null>(null);
+  const [healthError, setHealthError] = useState(false);
+
+  useEffect(() => {
+    checkHealth()
+      .then(setHealth)
+      .catch(() => setHealthError(true));
+  }, []);
 
   return (
     <div>
       <div className="page-header">
         <div>
           <h1 className="section-title">Settings</h1>
-          <p className="mt-1 text-sm text-slate-500">System configuration and demo environment state.</p>
+          <p className="mt-1 text-sm text-slate-500">System configuration and backend connection status.</p>
         </div>
       </div>
 
@@ -22,7 +30,11 @@ export default function SettingsPage() {
           <div className="mt-5 space-y-4 text-sm text-slate-600">
             <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
               <span>Application</span>
-              <span className="font-medium text-text">InvoiceShield</span>
+              <span className="font-medium text-text">{health?.app_name ?? 'InvoiceShield'}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
+              <span>Version</span>
+              <span className="font-medium text-text">{health?.version ?? '—'}</span>
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
               <span>Frontend stack</span>
@@ -30,7 +42,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
               <span>Environment</span>
-              <span className="font-medium text-text">Demo workflow</span>
+              <span className="font-medium text-text">Live backend</span>
             </div>
           </div>
         </div>
@@ -47,13 +59,21 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
               <span>Connection</span>
-              <span className="inline-flex items-center gap-1 font-medium text-emerald-700">
-                <CheckCircle2 size={14} /> Demo backend available
-              </span>
+              {healthError ? (
+                <span className="inline-flex items-center gap-1 font-medium text-red-600">
+                  Backend unreachable
+                </span>
+              ) : health ? (
+                <span className="inline-flex items-center gap-1 font-medium text-emerald-700">
+                  <CheckCircle2 size={14} /> Connected ({health.status})
+                </span>
+              ) : (
+                <span className="font-medium text-slate-400">Checking…</span>
+              )}
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
               <span>Demo mode</span>
-              <span className="font-medium text-text">{demoMode ? 'Enabled' : 'Disabled'}</span>
+              <span className="font-medium text-text">Disabled — live API</span>
             </div>
           </div>
         </div>
@@ -78,8 +98,8 @@ export default function SettingsPage() {
             Data handling
           </div>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-slate-600">
-            <li>Demo data is clearly isolated from any live API response path.</li>
-            <li>UI flows are prepared for a real FastAPI backend contract.</li>
+            <li>All data is fetched live from the FastAPI backend.</li>
+            <li>Documents are stored with SHA-256 fingerprints.</li>
             <li>All request logic is centralized in the frontend API layer.</li>
           </ul>
         </div>

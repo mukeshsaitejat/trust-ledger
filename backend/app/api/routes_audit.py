@@ -12,6 +12,48 @@ from app.services.audit_service import audit_service
 router = APIRouter(prefix="/audit", tags=["audit"])
 
 
+@router.get("/events")
+async def list_all_audit_events(
+    db: Session = Depends(get_db),
+    limit: int = 200,
+) -> Dict[str, Any]:
+    """
+    Return all audit events across every entity, newest first.
+    Used by the global Audit Trail page.
+    """
+    from app.db.models import AuditEvent
+    import json as _json
+
+    rows = (
+        db.query(AuditEvent)
+        .order_by(AuditEvent.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    events = []
+    for row in rows:
+        try:
+            data = _json.loads(row.event_data) if row.event_data else {}
+        except Exception:
+            data = {}
+
+        events.append({
+            "id": row.id,
+            "event_type": row.event_type,
+            "entity_id": row.entity_id,
+            "entity_type": row.entity_type,
+            "actor": row.actor,
+            "timestamp": row.timestamp,
+            "event_hash": row.event_hash,
+            "previous_hash": row.previous_hash,
+            "event_data": data,
+            "created_at": row.created_at.isoformat(),
+        })
+
+    return {"events": events, "total": len(events)}
+
+
 @router.get("/trail/{entity_id}")
 async def get_audit_trail(
     entity_id: str,

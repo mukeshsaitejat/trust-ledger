@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { fetchDashboard } from '../lib/demoApi';
+import { fetchDashboard } from '../lib/api';
 import type { DashboardSummary, RiskPoint } from '../types';
 
 export default function AnalyticsPage() {

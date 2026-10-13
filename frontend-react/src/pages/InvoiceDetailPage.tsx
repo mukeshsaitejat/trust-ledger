@@ -5,7 +5,7 @@ import { AuditTimeline } from '../components/verification/AuditTimeline';
 import { ComparisonTable } from '../components/verification/ComparisonTable';
 import { FindingsList } from '../components/verification/FindingsList';
 import { RiskBadge } from '../components/verification/RiskBadge';
-import { fetchIntegrityStatus, fetchInvoice } from '../lib/demoApi';
+import { fetchInvoiceData, getDocumentIntegrity } from '../lib/api';
 import type { InvoiceRecord } from '../types';
 
 const currency = new Intl.NumberFormat('en-IN', {
@@ -35,7 +35,7 @@ export default function InvoiceDetailPage() {
       setError(null);
 
       try {
-        const result = await fetchInvoice(invoiceId);
+        const result = await fetchInvoiceData(invoiceId);
         if (!active) return;
         setInvoice(result);
       } catch (loadError) {
@@ -69,8 +69,10 @@ export default function InvoiceDetailPage() {
     setIntegrityLoading(true);
 
     try {
-      const result = await fetchIntegrityStatus(invoice.invoiceNumber);
-      setIntegrityStatus(result);
+      const result = await getDocumentIntegrity(invoice.id);
+      setIntegrityStatus({ status: result.integrity_verified ? 'verified' : 'tampered', hash: result.message ?? '' });
+    } catch {
+      setIntegrityStatus({ status: 'error', hash: 'Could not verify integrity' });
     } finally {
       setIntegrityLoading(false);
     }

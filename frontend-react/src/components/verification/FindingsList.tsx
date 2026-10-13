@@ -1,9 +1,10 @@
 import type { Finding } from '../../types';
 
-const severityStyles = {
+const severityStyles: Record<string, string> = {
   Low: 'bg-slate-100 text-slate-700',
   Medium: 'bg-amber-100 text-amber-700',
   High: 'bg-red-100 text-red-700',
+  Critical: 'bg-red-200 text-red-800',
 };
 
 export function FindingsList({ findings }: { findings: Finding[] }) {

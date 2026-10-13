@@ -25,6 +25,61 @@ from app.services.audit_service import audit_service
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
 
+@router.get("/", tags=["invoices"])
+async def list_invoices(
+    db: Session = Depends(get_db)
+):
+    """
+    List all invoice verifications with summary data.
+    Returns the most recent verification per invoice document.
+    """
+    from sqlalchemy import func
+
+    # Subquery: latest verification per invoice_id
+    subq = (
+        db.query(
+            Verification.invoice_id,
+            func.max(Verification.verified_at).label("latest")
+        )
+        .group_by(Verification.invoice_id)
+        .subquery()
+    )
+
+    verifications = (
+        db.query(Verification)
+        .join(subq, (Verification.invoice_id == subq.c.invoice_id) &
+              (Verification.verified_at == subq.c.latest))
+        .order_by(Verification.verified_at.desc())
+        .all()
+    )
+
+    results = []
+    for v in verifications:
+        fields = json.loads(v.invoice_fields)
+        duplicate_info = json.loads(v.duplicate_info) if v.duplicate_info else {}
+        results.append({
+            "verification_id": v.id,
+            "invoice_id": v.invoice_id,
+            "invoice_number": fields.get("invoice_number") or v.invoice_id,
+            "supplier_name": fields.get("supplier_name") or "Unknown",
+            "buyer_name": fields.get("buyer_name") or "Unknown",
+            "amount": fields.get("amount") or 0,
+            "quantity": fields.get("quantity") or 0,
+            "invoice_date": fields.get("invoice_date"),
+            "po_reference": fields.get("po_reference"),
+            "verification_status": v.verification_status,
+            "risk_score": v.risk_score,
+            "risk_level": v.risk_level,
+            "financing_recommendation": v.financing_recommendation,
+            "has_duplicates": bool(v.has_duplicates),
+            "findings_count": v.findings_count,
+            "critical_count": v.critical_count,
+            "verified_at": v.verified_at.isoformat(),
+        })
+
+    return {"invoices": results, "total": len(results)}
+
+
 @router.post("/verify", response_model=VerificationResponse, status_code=201)
 async def verify_invoice(
     request: VerificationRequest,

@@ -2,7 +2,7 @@ import { AlertCircle, ArrowRight, CheckCircle2, FileText, ShieldCheck } from 'lu
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileUploadCard } from '../components/verification/FileUploadCard';
-import { verifyInvoice } from '../lib/demoApi';
+import { uploadDocument, verifyInvoice as realVerifyInvoice } from '../lib/api';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -69,14 +69,32 @@ export default function VerifyInvoicePage() {
     setSubmissionError(null);
 
     try {
-      const result = await verifyInvoice({
-        invoice: files.invoice!,
-        purchaseOrder: files.purchaseOrder!,
-        deliveryReceipt: files.deliveryReceipt!,
+      // Upload documents to real backend
+      console.log('Uploading documents to backend...');
+      
+      const invoiceUpload = await uploadDocument(files.invoice!, 'invoice');
+      const poUpload = await uploadDocument(files.purchaseOrder!, 'purchase_order');
+      const receiptUpload = await uploadDocument(files.deliveryReceipt!, 'delivery_receipt');
+      
+      console.log('Documents uploaded successfully:', {
+        invoice: invoiceUpload.document_id,
+        po: poUpload.document_id,
+        receipt: receiptUpload.document_id
       });
 
-      navigate(`/invoices/${result.invoiceId}`);
+      // Verify invoice using real backend
+      const verificationResult = await realVerifyInvoice(
+        invoiceUpload.document_id,
+        poUpload.document_id,
+        receiptUpload.document_id
+      );
+      
+      console.log('Verification result:', verificationResult);
+
+      // Navigate to results page with the invoice ID
+      navigate(`/invoices/${invoiceUpload.document_id}`);
     } catch (submitError) {
+      console.error('Verification error:', submitError);
       setSubmissionError(
         submitError instanceof Error ? submitError.message : 'Verification could not complete. Please check the backend connection and try again.',
       );
@@ -96,15 +114,6 @@ export default function VerifyInvoicePage() {
         </div>
       </div>
 
-      <div className="mb-6 rounded-2xl border border-blue/20 bg-blue/5 p-4 text-sm text-blue-800">
-        <div className="flex items-center gap-2 font-medium">
-          <ShieldCheck size={16} />
-          Demo integration mode
-        </div>
-        <p className="mt-1 text-blue-700">
-          The frontend is configured for a clear demo workflow and is ready to swap to the real FastAPI contract when the backend is available.
-        </p>
-      </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <FileUploadCard

@@ -1,7 +1,7 @@
 export type RiskLevel = 'Low Risk' | 'Medium Risk' | 'High Risk' | 'Pending';
 export type VerificationStatus = 'Verified' | 'Under Review' | 'Rejected' | 'Pending';
 export type ComparisonStatus = 'Match' | 'Mismatch' | 'Missing' | 'Unable to verify';
-export type FindingSeverity = 'Low' | 'Medium' | 'High';
+export type FindingSeverity = 'Low' | 'Medium' | 'High' | 'Critical';
 export type ChainStatus = 'Chain valid' | 'Chain verification failed' | 'Verification unavailable';
 
 export interface ComparisonRow {

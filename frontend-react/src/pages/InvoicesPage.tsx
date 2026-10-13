@@ -2,7 +2,7 @@ import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RiskBadge } from '../components/verification/RiskBadge';
-import { fetchInvoices } from '../lib/demoApi';
+import { fetchInvoices } from '../lib/api';
 import type { InvoiceRecord } from '../types';
 
 const currency = new Intl.NumberFormat('en-IN', {

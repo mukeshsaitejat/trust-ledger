@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { RiskBadge } from '../components/verification/RiskBadge';
-import { fetchDashboard } from '../lib/demoApi';
+import { fetchDashboard } from '../lib/api';
 import type { DashboardSummary, InvoiceRecord, RiskPoint } from '../types';
 
 const currency = new Intl.NumberFormat('en-IN', {
