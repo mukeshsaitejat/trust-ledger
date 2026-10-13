@@ -27,6 +27,28 @@ class Document(Base):
         return f"<Document {self.id} type={self.document_type}>"
 
 
+class AuditEvent(Base):
+    """
+    Tamper-evident audit trail.
+    Each event is hash-linked to the previous event.
+    """
+    __tablename__ = "audit_events"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    event_type = Column(String, nullable=False, index=True)  # document_uploaded, verification_completed, etc.
+    entity_id = Column(String, nullable=False, index=True)  # ID of affected entity
+    entity_type = Column(String, nullable=False)  # document, verification
+    event_data = Column(Text, nullable=False)  # JSON event details
+    actor = Column(String, nullable=False, default="system")  # Who performed the action
+    timestamp = Column(String, nullable=False)  # ISO format timestamp
+    previous_hash = Column(String(64), nullable=True)  # Hash of previous event
+    event_hash = Column(String(64), nullable=False, unique=True, index=True)  # Hash of this event
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    def __repr__(self):
+        return f"<AuditEvent {self.id} type={self.event_type} entity={self.entity_id}>"
+
+
 class Verification(Base):
     """
     Stores invoice verification results.

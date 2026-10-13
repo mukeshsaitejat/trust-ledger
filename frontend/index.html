@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceShield - Invoice Verification Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            margin-bottom: 15px;
+        }
+
+        .file-input-wrapper label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 12px 20px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .file-label:hover {
+            background: #e8e8e8;
+            border-color: #667eea;
+        }
+
+        .file-label.has-file {
+            background: #e7f3e7;
+            border-color: #4caf50;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-verify {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-box h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-review {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .risk-meter {
+            margin: 15px 0;
+        }
+
+        .risk-bar {
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .risk-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .risk-minimal { background: linear-gradient(90deg, #4caf50, #8bc34a); }
+        .risk-low { background: linear-gradient(90deg, #8bc34a, #ffc107); }
+        .risk-medium { background: linear-gradient(90deg, #ffc107, #ff9800); }
+        .risk-high { background: linear-gradient(90deg, #ff9800, #f44336); }
+
+        .finding-item {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .finding-critical {
+            border-left-color: #f44336;
+        }
+
+        .finding-high {
+            border-left-color: #ff9800;
+        }
+
+        .finding-medium {
+            border-left-color: #ffc107;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-text {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .document-ids {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .risk-factors {
+            margin-top: 15px;
+        }
+
+        .risk-factor-item {
+            padding: 8px 12px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .risk-factor-score {
+            font-weight: bold;
+            color: #667eea;
+            float: right;
+        }
+
+        .duplicate-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ InvoiceShield</h1>
+            <p>AI-Assisted Invoice Financing Verification Platform</p>
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <div class="stat-value" id="totalDocs">-</div>
+                <div class="stat-label">Documents</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalVerifications">-</div>
+                <div class="stat-label">Verifications</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="approvedCount">-</div>
+                <div class="stat-label">Approved</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="rejectedCount">-</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="highRiskCount">-</div>
+                <div class="stat-label">High Risk</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="card">
+                <h2>📤 Upload Documents</h2>
+                
+                <div class="upload-section">
+                    <div class="file-input-wrapper">
+                        <label>Invoice PDF</label>
+                        <input type="file" id="invoiceFile" class="file-input" accept=".pdf" />
+                        <label for="invoiceFile" class="file-label" id="invoiceLabel">
+                            Choose Invoice PDF
+                        </label>
+                    </div>
+
+                    <div class="file-input-wrapper">
+                        <label>Purchase Order PDF</label>
+                        <input type="file" id="poFile" class="file-input" accept=".pdf" />
+                        <label for="poFile" class="file-label" id="poLabel">
+                            Choose PO PDF
+                        </label>
+                    </div>
+
+                    <div class="file-input-wrapper">
+                        <label>Delivery Receipt PDF</label>
+                        <input type="file" id="drFile" class="file-input" accept=".pdf" />
+                        <label for="drFile" class="file-label" id="drLabel">
+                            Choose Delivery Receipt PDF
+                        </label>
+                    </div>
+
+                    <button class="btn btn-primary" id="uploadBtn" onclick="uploadDocuments()">
+                        Upload All Documents
+                    </button>
+                </div>
+
+                <div id="uploadResult"></div>
+            </div>
+
+            <!-- Verification Section -->
+            <div class="card">
+                <h2>✅ Verify Invoice</h2>
+                
+                <div id="verificationInput">
+                    <p class="info-text">Upload documents first, then click verify to check the invoice against PO and delivery receipt.</p>
+                    
+                    <button class="btn btn-verify" id="verifyBtn" onclick="verifyInvoice()" disabled>
+                        Verify Invoice
+                    </button>
+                </div>
+
+                <div id="verificationResult"></div>
+            </div>
+        </div>
+
+        <!-- Full Width Results Section -->
+        <div class="card" id="detailedResults" style="display: none;">
+            <h2>📊 Detailed Verification Results</h2>
+            <div id="detailedContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let uploadedDocs = {};
+
+        // File input handlers
+        document.getElementById('invoiceFile').addEventListener('change', function(e) {
+            updateFileLabel('invoiceLabel', this.files[0]);
+        });
+        document.getElementById('poFile').addEventListener('change', function(e) {
+            updateFileLabel('poLabel', this.files[0]);
+        });
+        document.getElementById('drFile').addEventListener('change', function(e) {
+            updateFileLabel('drLabel', this.files[0]);
+        });
+
+        function updateFileLabel(labelId, file) {
+            const label = document.getElementById(labelId);
+            if (file) {
+                label.textContent = `✓ ${file.name}`;
+                label.classList.add('has-file');
+            }
+        }
+
+        // Load stats on page load
+        loadStats();
+        setInterval(loadStats, 5000); // Refresh every 5 seconds
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/system/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('totalDocs').textContent = stats.total_documents;
+                document.getElementById('totalVerifications').textContent = stats.total_verifications;
+                document.getElementById('approvedCount').textContent = stats.approved_count;
+                document.getElementById('rejectedCount').textContent = stats.rejected_count;
+                document.getElementById('highRiskCount').textContent = stats.high_risk_count;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function uploadDocuments() {
+            const invoiceFile = document.getElementById('invoiceFile').files[0];
+            const poFile = document.getElementById('poFile').files[0];
+            const drFile = document.getElementById('drFile').files[0];
+
+            if (!invoiceFile || !poFile || !drFile) {
+                showError('uploadResult', 'Please select all three documents');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+
+            const resultDiv = document.getElementById('uploadResult');
+            resultDiv.innerHTML = '<div class="loader"></div>';
+
+            try {
+                // Upload invoice
+                const invoiceId = await uploadFile(invoiceFile, 'invoice');
+                // Upload PO
+                const poId = await uploadFile(poFile, 'purchase_order');
+                // Upload DR
+                const drId = await uploadFile(drFile, 'delivery_receipt');
+
+                uploadedDocs = {
+                    invoice_id: invoiceId,
+                    po_id: poId,
+                    delivery_receipt_id: drId
+                };
+
+                resultDiv.innerHTML = `
+                    <div class="success-message">
+                        <strong>✓ All documents uploaded successfully!</strong>
+                        <div class="document-ids">
+                            <div><strong>Invoice ID:</strong> ${invoiceId}</div>
+                            <div><strong>PO ID:</strong> ${poId}</div>
+                            <div><strong>DR ID:</strong> ${drId}</div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('verifyBtn').disabled = false;
+                loadStats();
+            } catch (error) {
+                showError('uploadResult', error.message);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload All Documents';
+            }
+        }
+
+        async function uploadFile(file, documentType) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('document_type', documentType);
+
+            const response = await fetch(`${API_BASE}/documents/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Upload failed');
+            }
+
+            const result = await response.json();
+            return result.document_id;
+        }
+
+        async function verifyInvoice() {
+            if (!uploadedDocs.invoice_id) {
+                showError('verificationResult', 'Please upload documents first');
+                return;
+            }
+
+            const verifyBtn = document.getElementById('verifyBtn');
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verifying...';
+
+            const resultDiv = document.getElementById('verificationResult');
+            resultDiv.innerHTML = '<div class="loader"></div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/invoices/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(uploadedDocs)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Verification failed');
+                }
+
+                const result = await response.json();
+                displayVerificationResult(result);
+                loadStats();
+            } catch (error) {
+                showError('verificationResult', error.message);
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify Invoice';
+            }
+        }
+
+        function displayVerificationResult(result) {
+            const comparison = result.comparison_result;
+            const risk = result.risk_assessment;
+            const duplicate = result.duplicate_check;
+
+            let statusClass = 'status-approved';
+            if (comparison.status === 'rejected') statusClass = 'status-rejected';
+            else if (comparison.status === 'review_required') statusClass = 'status-review';
+
+            let html = `
+                <div class="result-box">
+                    <h3>Verification Status</h3>
+                    <span class="status-badge ${statusClass}">
+                        ${comparison.status.toUpperCase().replace('_', ' ')}
+                    </span>
+                    
+                    <div style="margin-top: 15px;">
+                        <strong>Findings:</strong> ${comparison.findings_count} 
+                        (Critical: ${comparison.critical_count}, High: ${comparison.high_count})
+                    </div>
+            `;
+
+            // Risk Assessment
+            if (risk) {
+                const riskPercent = risk.risk_score;
+                let riskClass = 'risk-minimal';
+                if (riskPercent > 75) riskClass = 'risk-high';
+                else if (riskPercent > 50) riskClass = 'risk-medium';
+                else if (riskPercent > 25) riskClass = 'risk-low';
+
+                html += `
+                    <div class="risk-meter">
+                        <strong>Risk Score: ${riskPercent}/100 (${risk.risk_level})</strong>
+                        <div class="risk-bar">
+                            <div class="risk-fill ${riskClass}" style="width: ${riskPercent}%">
+                                ${riskPercent}%
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <strong>Recommendation:</strong> ${risk.financing_recommendation}
+                        </div>
+                        <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                            ${risk.recommendation_reason}
+                        </div>
+                    </div>
+                `;
+
+                // Risk Factors
+                if (risk.risk_factors && risk.risk_factors.length > 0) {
+                    html += `<div class="risk-factors"><strong>Risk Factors:</strong>`;
+                    risk.risk_factors.forEach(factor => {
+                        html += `
+                            <div class="risk-factor-item">
+                                <span class="risk-factor-score">+${factor.score}</span>
+                                <strong>${factor.factor.replace('_', ' ').toUpperCase()}</strong>
+                                <div style="color: #666; font-size: 0.9rem;">${factor.description}</div>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            }
+
+            // Duplicate Check
+            if (duplicate && duplicate.has_duplicates) {
+                html += `
+                    <div class="duplicate-warning">
+                        <strong>⚠️ Duplicate Detected!</strong><br>
+                        ${duplicate.exact_duplicate ? duplicate.exact_duplicate.message : ''}
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+
+            document.getElementById('verificationResult').innerHTML = html;
+
+            // Show detailed results
+            displayDetailedResults(result);
+        }
+
+        function displayDetailedResults(result) {
+            const detailedDiv = document.getElementById('detailedResults');
+            const contentDiv = document.getElementById('detailedContent');
+            
+            let html = '';
+
+            // Findings
+            if (result.comparison_result.findings.length > 0) {
+                html += `<h3>Issues Found:</h3>`;
+                result.comparison_result.findings.forEach(finding => {
+                    let findingClass = '';
+                    if (finding.severity === 'critical') findingClass = 'finding-critical';
+                    else if (finding.severity === 'high') findingClass = 'finding-high';
+                    else if (finding.severity === 'medium') findingClass = 'finding-medium';
+
+                    html += `
+                        <div class="finding-item ${findingClass}">
+                            <strong>[${finding.severity.toUpperCase()}] ${finding.finding_type.replace('_', ' ').toUpperCase()}</strong><br>
+                            ${finding.message}
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<div class="success-message">✓ No issues found! Invoice matches PO and delivery receipt.</div>`;
+            }
+
+            // Extracted Fields
+            html += `
+                <h3 style="margin-top: 25px;">Extracted Data:</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-top: 15px;">
+            `;
+
+            // Invoice Fields
+            html += formatExtractedFields('Invoice', result.invoice_fields);
+            // PO Fields
+            html += formatExtractedFields('Purchase Order', result.po_fields);
+            // DR Fields
+            html += formatExtractedFields('Delivery Receipt', result.delivery_fields);
+
+            html += `</div>`;
+
+            contentDiv.innerHTML = html;
+            detailedDiv.style.display = 'block';
+        }
+
+        function formatExtractedFields(title, fields) {
+            let html = `
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                    <strong style="color: #667eea;">${title}</strong><br>
+                    <div style="margin-top: 10px; font-size: 0.9rem;">
+            `;
+
+            for (const [key, value] of Object.entries(fields)) {
+                if (key !== 'extraction_successful' && key !== 'extraction_errors' && value !== null) {
+                    html += `<div style="margin: 5px 0;"><strong>${key.replace('_', ' ')}:</strong> ${value}</div>`;
+                }
+            }
+
+            html += `</div></div>`;
+            return html;
+        }
+
+        function showError(divId, message) {
+            document.getElementById(divId).innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

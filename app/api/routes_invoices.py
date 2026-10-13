@@ -20,6 +20,7 @@ from app.services.pdf_extractor import pdf_extractor
 from app.services.document_comparator import document_comparator
 from app.services.duplicate_detector import duplicate_detector
 from app.services.risk_engine import risk_engine
+from app.services.audit_service import audit_service
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
@@ -175,6 +176,28 @@ async def verify_invoice(
         db.add(verification)
         db.commit()
         db.refresh(verification)
+        
+        # Record audit event
+        audit_service.record_event(
+            event_type="verification_completed",
+            entity_id=verification.id,
+            entity_type="verification",
+            event_data={
+                "invoice_id": verification.invoice_id,
+                "po_id": verification.po_id,
+                "delivery_receipt_id": verification.delivery_receipt_id,
+                "verification_status": verification.verification_status,
+                "risk_score": verification.risk_score,
+                "risk_level": verification.risk_level,
+                "financing_recommendation": verification.financing_recommendation,
+                "has_duplicates": bool(verification.has_duplicates),
+                "findings_count": verification.findings_count,
+                "critical_count": verification.critical_count
+            },
+            actor="system",
+            db=db
+        )
+        
     except Exception as e:
         raise HTTPException(
             status_code=500,

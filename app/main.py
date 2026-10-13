@@ -8,7 +8,7 @@ from datetime import datetime
 
 from app.core.config import settings
 from app.db.database import init_db
-from app.api import routes_documents, routes_invoices
+from app.api import routes_documents, routes_invoices, routes_audit, routes_system
 from app.schemas.documents import HealthResponse
 
 # Initialize FastAPI app
@@ -38,6 +38,8 @@ async def startup_event():
 # Include routers
 app.include_router(routes_documents.router)
 app.include_router(routes_invoices.router)
+app.include_router(routes_audit.router)
+app.include_router(routes_system.router)
 
 
 @app.get("/", tags=["root"])

@@ -9,6 +9,7 @@ from app.db.database import get_db
 from app.db.models import Document
 from app.schemas.documents import DocumentUploadResponse, DocumentMetadata
 from app.services.document_storage import document_storage
+from app.services.audit_service import audit_service
 from app.core.config import settings
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -95,6 +96,22 @@ async def upload_document(
         db.add(db_document)
         db.commit()
         db.refresh(db_document)
+        
+        # Record audit event
+        audit_service.record_event(
+            event_type="document_uploaded",
+            entity_id=db_document.id,
+            entity_type="document",
+            event_data={
+                "filename": db_document.filename,
+                "document_type": db_document.document_type,
+                "file_size": db_document.file_size,
+                "sha256_hash": db_document.sha256_hash
+            },
+            actor="user",
+            db=db
+        )
+        
     except Exception as e:
         # Clean up file if database insert fails
         try:
