@@ -15,8 +15,11 @@ from app.schemas.verification import (
     ExtractedFields,
     ComparisonResult
 )
+from app.schemas.risk import DuplicateResults, RiskAssessment
 from app.services.pdf_extractor import pdf_extractor
 from app.services.document_comparator import document_comparator
+from app.services.duplicate_detector import duplicate_detector
+from app.services.risk_engine import risk_engine
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
@@ -128,6 +131,24 @@ async def verify_invoice(
         delivery_fields
     )
     
+    # Check for duplicates
+    duplicate_results = duplicate_detector.check_duplicates(
+        invoice_doc.sha256_hash,
+        invoice_fields.get("invoice_number"),
+        invoice_fields.get("supplier_name"),
+        invoice_fields.get("amount"),
+        db
+    )
+    
+    # Calculate risk score
+    risk_assessment = risk_engine.calculate_risk_score(
+        comparison_result["findings"],
+        duplicate_results,
+        invoice_fields,
+        po_fields,
+        delivery_fields
+    )
+    
     # Create verification record
     verification_id = str(uuid.uuid4())
     
@@ -142,7 +163,12 @@ async def verify_invoice(
         verification_status=comparison_result["status"],
         findings=json.dumps(comparison_result["findings"]),
         findings_count=comparison_result["findings_count"],
-        critical_count=comparison_result["critical_count"]
+        critical_count=comparison_result["critical_count"],
+        risk_score=risk_assessment["risk_score"],
+        risk_level=risk_assessment["risk_level"],
+        financing_recommendation=risk_assessment["financing_recommendation"],
+        has_duplicates=duplicate_results["has_duplicates"],
+        duplicate_info=json.dumps(duplicate_results)
     )
     
     try:
@@ -165,6 +191,8 @@ async def verify_invoice(
         po_fields=ExtractedFields(**po_fields) if po_fields else None,
         delivery_fields=ExtractedFields(**delivery_fields) if delivery_fields else None,
         comparison_result=ComparisonResult(**comparison_result),
+        duplicate_check=duplicate_results,
+        risk_assessment=risk_assessment,
         verified_at=verification.verified_at
     )
 
@@ -209,6 +237,19 @@ async def get_verification(
         "medium_count": sum(1 for f in findings if f.get("severity") == "medium")
     }
     
+    # Parse risk and duplicate info if available
+    risk_data = None
+    if verification.risk_score is not None:
+        risk_data = {
+            "risk_score": verification.risk_score,
+            "risk_level": verification.risk_level,
+            "financing_recommendation": verification.financing_recommendation
+        }
+    
+    duplicate_data = None
+    if verification.duplicate_info:
+        duplicate_data = json.loads(verification.duplicate_info)
+    
     return VerificationResponse(
         verification_id=verification.id,
         invoice_id=verification.invoice_id,
@@ -218,5 +259,60 @@ async def get_verification(
         po_fields=ExtractedFields(**po_fields) if po_fields else None,
         delivery_fields=ExtractedFields(**delivery_fields) if delivery_fields else None,
         comparison_result=ComparisonResult(**comparison_result),
+        duplicate_check=duplicate_data,
+        risk_assessment=risk_data,
         verified_at=verification.verified_at
     )
+
+
+@router.get("/{invoice_id}/risk")
+async def get_invoice_risk(
+    invoice_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get the full risk assessment for an invoice.
+    Returns risk score, level, all risk factors, and financing recommendation.
+    """
+    verification = db.query(Verification).filter(
+        Verification.invoice_id == invoice_id
+    ).order_by(Verification.verified_at.desc()).first()
+
+    if not verification:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No verification found for invoice {invoice_id}"
+        )
+
+    invoice_fields = verification.get_invoice_fields()
+    findings = verification.get_findings()
+    duplicate_info = json.loads(verification.duplicate_info) if verification.duplicate_info else {
+        "has_duplicates": False, "exact_duplicate": None, "business_duplicate": None
+    }
+
+    # Recalculate full risk assessment for complete factor list
+    po_fields = json.loads(verification.po_fields) if verification.po_fields else None
+    delivery_fields = json.loads(verification.delivery_fields) if verification.delivery_fields else None
+
+    full_risk = risk_engine.calculate_risk_score(
+        findings,
+        duplicate_info,
+        invoice_fields,
+        po_fields,
+        delivery_fields
+    )
+
+    from datetime import datetime
+    return {
+        "invoice_id": invoice_id,
+        "verification_id": verification.id,
+        "risk_score": full_risk["risk_score"],
+        "risk_level": full_risk["risk_level"],
+        "financing_recommendation": full_risk["financing_recommendation"],
+        "recommendation_reason": full_risk["recommendation_reason"],
+        "recommendation_action": full_risk["recommendation_action"],
+        "risk_factors": full_risk["risk_factors"],
+        "risk_factor_count": full_risk["risk_factor_count"],
+        "duplicate_check": duplicate_info,
+        "assessed_at": verification.verified_at.isoformat()
+    }

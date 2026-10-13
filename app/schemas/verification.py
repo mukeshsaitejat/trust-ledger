@@ -57,6 +57,8 @@ class VerificationResponse(BaseModel):
     po_fields: Optional[ExtractedFields] = None
     delivery_fields: Optional[ExtractedFields] = None
     comparison_result: ComparisonResult
+    duplicate_check: Optional[Dict[str, Any]] = None  # Phase 3
+    risk_assessment: Optional[Dict[str, Any]] = None  # Phase 3
     verified_at: datetime
     
     class Config:

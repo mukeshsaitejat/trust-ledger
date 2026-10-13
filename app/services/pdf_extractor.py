@@ -63,17 +63,21 @@ class PDFExtractor:
         }
         
         try:
-            # Invoice number patterns
+            # Invoice number patterns - improved to skip label words
             invoice_patterns = [
-                r"Invoice\s*#?\s*:?\s*([A-Z0-9\-]+)",
-                r"Invoice\s+Number\s*:?\s*([A-Z0-9\-]+)",
-                r"INV\s*#?\s*:?\s*([A-Z0-9\-]+)"
+                r"Invoice\s+Number\s*:?\s+([A-Z0-9\-]+)",
+                r"Invoice\s*#\s*:?\s*([A-Z0-9\-]+)",
+                r"INV\s*#?\s*:?\s*([A-Z0-9\-]+)",
+                r"Invoice\s+No\.?\s*:?\s*([A-Z0-9\-]+)"
             ]
             for pattern in invoice_patterns:
                 match = re.search(pattern, text, re.IGNORECASE)
                 if match:
-                    fields["invoice_number"] = match.group(1).strip()
-                    break
+                    inv_num = match.group(1).strip()
+                    # Skip if we just captured the label word itself
+                    if inv_num.upper() not in ['NUMBER', 'NO', 'INVOICE']:
+                        fields["invoice_number"] = inv_num
+                        break
             
             # Invoice date patterns
             date_patterns = [
@@ -109,22 +113,29 @@ class PDFExtractor:
                     fields["buyer_name"] = match.group(1).strip()
                     break
             
-            # PO reference patterns
+            # PO reference patterns - improved
             po_patterns = [
-                r"PO\s*#?\s*:?\s*([A-Z0-9\-]+)",
+                r"PO\s+Reference\s*:?\s+([A-Z0-9\-]+)",
+                r"PO\s*#\s*:?\s*([A-Z0-9\-]+)",
                 r"Purchase\s+Order\s*#?\s*:?\s*([A-Z0-9\-]+)",
-                r"P\.?O\.?\s+Number\s*:?\s*([A-Z0-9\-]+)"
+                r"P\.?O\.?\s+Number\s*:?\s*([A-Z0-9\-]+)",
+                r"PO\s*:?\s+([A-Z0-9\-]+)"
             ]
             for pattern in po_patterns:
                 match = re.search(pattern, text, re.IGNORECASE)
                 if match:
-                    fields["po_reference"] = match.group(1).strip()
-                    break
+                    po_ref = match.group(1).strip()
+                    # Skip if we just captured label words
+                    if po_ref.upper() not in ['REFERENCE', 'NUMBER', 'ORDER']:
+                        fields["po_reference"] = po_ref
+                        break
             
-            # Amount patterns (total, grand total, etc.)
+            # Amount patterns - support multiple currencies (USD, INR, EUR, etc.)
             amount_patterns = [
-                r"(?:Total|Amount|Grand\s+Total)\s*:?\s*\$?\s*([\d,]+\.?\d*)",
-                r"\$\s*([\d,]+\.?\d*)\s*(?:Total|USD)"
+                r"(?:Total|Amount|Grand\s+Total)\s*:?\s*[$₹€£¥I]\s*([\d,]+\.?\d*)",
+                r"Amount\s*:?\s*\n?\s*[$₹€£¥I]\s*([\d,]+\.?\d*)",
+                r"(?:Total|Amount)\s*[$₹€£¥I]?\s*([\d,]+\.?\d*)",
+                r"[$₹€£¥I]\s*([\d,]+\.?\d*)\s*(?:Total|USD|INR|EUR)"
             ]
             for pattern in amount_patterns:
                 match = re.search(pattern, text, re.IGNORECASE)
@@ -132,9 +143,9 @@ class PDFExtractor:
                     amount_str = match.group(1).replace(",", "")
                     try:
                         fields["amount"] = float(amount_str)
+                        break
                     except ValueError:
                         pass
-                    break
             
             # Quantity patterns
             quantity_patterns = [
@@ -198,16 +209,20 @@ class PDFExtractor:
         }
         
         try:
-            # PO number patterns
+            # PO number patterns - improved
             po_patterns = [
-                r"(?:Purchase\s+Order|PO)\s*#?\s*:?\s*([A-Z0-9\-]+)",
-                r"Order\s+Number\s*:?\s*([A-Z0-9\-]+)"
+                r"Purchase\s+Order\s+Number\s*:?\s+([A-Z0-9\-]+)",
+                r"(?:Purchase\s+Order|PO)\s*#\s*:?\s*([A-Z0-9\-]+)",
+                r"Order\s+Number\s*:?\s*([A-Z0-9\-]+)",
+                r"PO\s*:?\s+([A-Z0-9\-]+)"
             ]
             for pattern in po_patterns:
                 match = re.search(pattern, text, re.IGNORECASE)
                 if match:
-                    fields["po_number"] = match.group(1).strip()
-                    break
+                    po_num = match.group(1).strip()
+                    if po_num.upper() not in ['NUMBER', 'ORDER', 'DOCUMENT']:
+                        fields["po_number"] = po_num
+                        break
             
             # Date patterns
             date_patterns = [
@@ -239,9 +254,11 @@ class PDFExtractor:
                     fields["buyer_name"] = match.group(1).strip()
                     break
             
-            # Amount patterns
+            # Amount patterns - support multiple currencies
             amount_patterns = [
-                r"(?:Total|Amount)\s*:?\s*\$?\s*([\d,]+\.?\d*)"
+                r"(?:Total|Amount)\s*:?\s*[$₹€£¥I]\s*([\d,]+\.?\d*)",
+                r"Amount\s*:?\s*\n?\s*[$₹€£¥I]\s*([\d,]+\.?\d*)",
+                r"[$₹€£¥I]\s*([\d,]+\.?\d*)\s*(?:Total|USD|INR|EUR)"
             ]
             for pattern in amount_patterns:
                 match = re.search(pattern, text, re.IGNORECASE)
@@ -249,9 +266,9 @@ class PDFExtractor:
                     amount_str = match.group(1).replace(",", "")
                     try:
                         fields["amount"] = float(amount_str)
+                        break
                     except ValueError:
                         pass
-                    break
             
             # Quantity patterns
             quantity_patterns = [
@@ -339,16 +356,20 @@ class PDFExtractor:
                     fields["buyer_name"] = match.group(1).strip()
                     break
             
-            # PO reference patterns
+            # PO reference patterns - improved
             po_patterns = [
+                r"PO\s+Reference\s*:?\s+([A-Z0-9\-]+)",
                 r"PO\s*#?\s*:?\s*([A-Z0-9\-]+)",
-                r"Purchase\s+Order\s*:?\s*([A-Z0-9\-]+)"
+                r"Purchase\s+Order\s*:?\s*([A-Z0-9\-]+)",
+                r"PO\s*:?\s+([A-Z0-9\-]+)"
             ]
             for pattern in po_patterns:
                 match = re.search(pattern, text, re.IGNORECASE)
                 if match:
-                    fields["po_reference"] = match.group(1).strip()
-                    break
+                    po_ref = match.group(1).strip()
+                    if po_ref.upper() not in ['REFERENCE', 'NUMBER', 'ORDER']:
+                        fields["po_reference"] = po_ref
+                        break
             
             # Delivered quantity patterns
             quantity_patterns = [

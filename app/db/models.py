@@ -1,7 +1,7 @@
 """
 SQLAlchemy database models.
 """
-from sqlalchemy import Column, String, Integer, DateTime, BigInteger, Text, Float
+from sqlalchemy import Column, String, Integer, DateTime, BigInteger, Text, Float, Float
 from datetime import datetime
 import json
 
@@ -48,6 +48,13 @@ class Verification(Base):
     findings = Column(Text, nullable=False)  # JSON array of findings
     findings_count = Column(Integer, nullable=False, default=0)
     critical_count = Column(Integer, nullable=False, default=0)
+    
+    # Risk assessment (Phase 3)
+    risk_score = Column(Float, nullable=True)  # 0-100
+    risk_level = Column(String, nullable=True)  # MINIMAL, LOW, MEDIUM, HIGH
+    financing_recommendation = Column(String, nullable=True)  # APPROVED, MANUAL_REVIEW, REJECT
+    has_duplicates = Column(Integer, nullable=False, default=0)  # Boolean as integer
+    duplicate_info = Column(Text, nullable=True)  # JSON duplicate details
     
     verified_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
