@@ -1,0 +1,106 @@
+═══════════════════════════════════════════════════════════════
+   INVOICESHIELD - QUICK START GUIDE
+═══════════════════════════════════════════════════════════════
+
+🚀 FASTEST WAY TO START:
+
+   1. Double-click:  start_demo.bat
+   2. Browser opens automatically
+   3. Start testing!
+
+   That's it! ✨
+
+═══════════════════════════════════════════════════════════════
+
+📖 MANUAL START (if needed):
+
+   Terminal 1 (Backend):
+   ─────────────────────
+   uvicorn app.main:app --reload
+
+   Terminal 2 (Frontend):
+   ──────────────────────
+   cd frontend
+   python serve.py
+
+   Then open: http://localhost:3000
+
+═══════════════════════════════════════════════════════════════
+
+🎯 HOW TO TEST:
+
+   Step 1: Upload Documents
+   ────────────────────────
+   - Go to InvoiceShield_Synthetic_Test_PDFs/case1_clean/
+   - Upload invoice.pdf
+   - Upload purchase_order.pdf  
+   - Upload delivery_receipt.pdf
+   - Click "Upload All Documents"
+
+   Step 2: Verify
+   ──────────────
+   - Click "Verify Invoice"
+   - See results instantly!
+
+   Expected Result:
+   - Status: APPROVED (green)
+   - Risk Score: < 25 (green meter)
+   - No critical findings
+
+═══════════════════════════════════════════════════════════════
+
+🧪 TEST SCENARIOS:
+
+   case1_clean/              → Should APPROVE ✅
+   case2_amount_mismatch/    → Should REJECT ❌  
+   case3_quantity_mismatch/  → Should REVIEW ⚠️
+   case4_supplier_mismatch/  → Should REJECT ❌
+
+═══════════════════════════════════════════════════════════════
+
+🔗 IMPORTANT URLS:
+
+   Frontend:    http://localhost:3000
+   Backend:     http://localhost:8000
+   API Docs:    http://localhost:8000/docs
+
+═══════════════════════════════════════════════════════════════
+
+❓ TROUBLESHOOTING:
+
+   Backend won't start?
+   ───────────────────
+   - Run: pip install -r requirements.txt
+   - Check port 8000 is not in use
+
+   Frontend won't start?
+   ────────────────────
+   - Make sure Python is installed
+   - Try: python -m http.server 3000 (in frontend folder)
+
+   Can't upload files?
+   ──────────────────
+   - Make sure backend is running
+   - Check files are PDFs
+   - See browser console (F12) for errors
+
+═══════════════════════════════════════════════════════════════
+
+📚 MORE HELP:
+
+   Read these files for detailed help:
+   
+   - FRONTEND_SETUP.md          → Frontend instructions
+   - COMPLETE_PROJECT_SUMMARY.md → Full project overview
+   - README.md                   → Complete documentation
+   - frontend/README.md          → Frontend features
+
+═══════════════════════════════════════════════════════════════
+
+✨ YOU'RE READY!
+
+   Just run:  start_demo.bat
+   
+   Happy testing! 🎉
+
+═══════════════════════════════════════════════════════════════
